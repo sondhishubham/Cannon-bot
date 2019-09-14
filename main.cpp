@@ -41,6 +41,7 @@ public:
     game::BOX board[8][8];
     game()
     {
+    	heuristic = 0;
         for(int i(0);i<8;i++) for(int j(0);j<8;j++)board[i][j]=game::EMPTY;
         for(int i(0);i<4;i++) { destroyedWhites.push_back(1);destroyedBlacks.push_back(1);}
         for(int i=0; i<8; i+=2) {
@@ -54,6 +55,7 @@ public:
     }
     vector<int> destroyedBlacks;
     vector<int> destroyedWhites;
+    int heuristic;
     vector<Pawn> getBlack(){ return blacks;}
     vector<Pawn> getWhite(){ return whites;}
     vector<Pawn> setSoldiers(vector<Pawn> p,Pawn::Side s){
@@ -334,10 +336,11 @@ int c_heuristic(game g,game::BOX b,int i,int shot, int x,int y,int currH)//destr
 
 
 game playMove(game g,game::BOX b,int i, int shot, int x, int y) {
-    game gg = g;//gg is good game;
+    game gg = g; //gg is good game;
     Pawn::Side s = box2Side(b);
     vector<Pawn> pawns = gg.getSoldiers(s);
     int j, curr_x, curr_y;
+    int h = c_heuristic(g,b,i,shot,x,y,g.heuristic);
     Pawn::Side enemySide = (s == Pawn::BLACK) ? (Pawn::WHITE) : (Pawn::BLACK);
     vector<Pawn> enemies = gg.getSoldiers(enemySide);
     if (shot == 0) {
@@ -365,23 +368,20 @@ game playMove(game g,game::BOX b,int i, int shot, int x, int y) {
         if(isSelfTownHallAt(x,y, game::WHITE))
             gg.destroyedWhites.at(x/2) = 0;
     }
+    gg.heuristic = h;
     return gg;
 }
 
 
 //int MaxVal(int state[8][8], int alpha,int beta, int numPlies);
 
-int utility(int curr_x,int curr_y,int new_x,int new_y){
-
-}
-
-game best_first(game g, Pawn::Side side, int cur_h) {
+game best_first(game g, Pawn::Side side) {
     vector<vector<int > > moves=getMoves(g,side);
     int max_h = -20000;
     int index = 0;
     for(int i=0; i< moves.at(0).size(); i++)
     {
-        int temp = c_heuristic(g, sideToBox(side), moves[0][i], moves[1][i], moves[2][i], moves[3][i], cur_h);
+        int temp = c_heuristic(g, sideToBox(side), moves[0][i], moves[1][i], moves[2][i], moves[3][i], g.heuristic);
         if(temp<max_h){
             max_h = temp;
             index = i;
@@ -465,16 +465,13 @@ int main()
 
     initialize_heuristic();
     game g;
-    //print_heuristic();
-//    printBoard(p.board);
-//    cout<<game::BLACK<<" black"<<endl;
-//    cout<<game::WHITE<<" white"<<endl;
-//    cout<<game::EMPTY<<" empty"<<endl;
-//
-//    vector<vector<int> > pp=getMoves(p,Pawn::BLACK);
-//    cout<<pp.size()<<endl;
-//    for(int i=0;i<pp.size();i++){
-//        cout<<pp[i].size()<<endl;
-//    }
+    char s,b;
+    int x1,y1,x2,y2;
+    while(true){
+    	cin>>s>>x1>>y1>>b>>x2>>y2;
+    	g = playMove(g, game::WHITE, g.getPawn(x1, y1, Pawn::WHITE), (int)(b=='B'), x2, y2);
+    	g = best_first(g, Pawn::BLACK);
+    }
+
     return 0;
 }
