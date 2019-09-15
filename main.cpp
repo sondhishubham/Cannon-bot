@@ -153,9 +153,9 @@ vector<vector<int> > getMoves(game g, Pawn::Side p) {
         addMove(x + 1, y - 1 * isBlack, i, 0, moves, g.board, curBox);
         // RETREAT MOVES
         if (isEnemyAttacking(x, y, g.board, curBox)) {
-            addMove(x - 2, y - 2 * isBlack, i, 0, moves, g.board, curBox);
-            addMove(x, y - 2 * isBlack, i, 0, moves, g.board, curBox);
-            addMove(x + 2, y - 2 * isBlack, i, 0, moves, g.board, curBox);
+            addMove(x - 2, y + 2 * isBlack, i, 0, moves, g.board, curBox);
+            addMove(x, y + 2 * isBlack, i, 0, moves, g.board, curBox);
+            addMove(x + 2, y + 2 * isBlack, i, 0, moves, g.board, curBox);
         }
         // SIDE MOVES
         if (isEnemyPawnAt(x - 1, y, g.board, curBox)) {
@@ -256,8 +256,8 @@ bool isSelfPawnAt(int x, int y, game::BOX board[8][8],game::BOX b) {
 
 bool isSelfTownHallAt(int x, int y, game::BOX b) {
     if(b==game::BLACK)
-        return ( y==7 && x%2==0 );
-    return (y==0 && x%2==1);
+        return ( y==7 && x%2==1 );
+    return (y==0 && x%2==0);
 }
 
 bool isEnemyPawnAt(int x, int y, game::BOX board[8][8],game::BOX b) {
@@ -298,18 +298,20 @@ int c_heuristic(game g,game::BOX b,int i,int shot, int x,int y,int currH)//destr
         if (isSelfTownHallAt(x, y, enemy)) {
             vector<Pawn> blacks = g.getBlack();
             int sum = 0, xx, yy, townHall = x / 2;
+            //cout<<townHall;
             for (int i(0); i < blacks.size(); i++) {
                 xx = blacks.at(i).getcorX();
                 yy = blacks.at(i).getcorY();
                 sum += h_blacks[townHall][xx][yy];
+                destroyedWhite[townHall] = 0;
             }
             currH += (128 * 12 - sum);
         }
         else if (g.board[x][y] == enemy) {
             for (int i = 0; i < 4; i++)
-                currH += (destroyedBlack[i] * h_whites[i][x][y]);
+                currH += (destroyedBlack[i] * h_whites[i][x][y]+3);
         }
-        if(shot==0)
+        else if(shot==0)
         {
             for(int i(0);i<4;i++) currH+=(h_blacks[i][x][y]-h_blacks[i][currX][currY]);
         }
@@ -321,14 +323,15 @@ int c_heuristic(game g,game::BOX b,int i,int shot, int x,int y,int currH)//destr
                 xx = whites.at(i).getcorX();
                 yy = whites.at(i).getcorY();
                 sum += h_whites[townHall][xx][yy];
+                destroyedBlack[townHall] = 0;
             }
             currH -= (128 * 12 - sum);
         }
         else if (g.board[x][y] == enemy) {
             for (int i = 0; i < 4; i++)
-                currH -= (destroyedWhite[i] * h_blacks[i][x][y]);
+                currH -= (destroyedWhite[i] * h_blacks[i][x][y]+3);
         }
-        if(shot==0)
+        else if(shot==0)
         {
             for(int i(0);i<4;i++) currH-=(h_whites[i][x][y]-h_whites[i][currX][currY]);
         }
@@ -379,34 +382,46 @@ game playMove(game g,game::BOX b,int i, int shot, int x, int y) {
 //int MaxVal(int state[8][8], int alpha,int beta, int numPlies);
 
 
-game best_first(game g, Pawn::Side side) {
-    vector<vector<int > > moves=getMoves(g,side);
+int bestchild(game g, Pawn::Side side,vector<vector<int> > moves) {
     int max_h = -20000;
     int index = 0;
     for(int i=0; i< moves.at(0).size(); i++)
     {
         int temp = c_heuristic(g, sideToBox(side), moves[0][i], moves[1][i], moves[2][i], moves[3][i], g.heuristic);
-        cout<<temp<<' ';
         if(temp>max_h){
             max_h = temp;
             index = i;
         }
     }
     cout<<endl;
-    game gg = playMove(g,sideToBox(side), moves[0][index], moves[1][index], moves[2][index], moves[3][index]);
-    Pawn pawn = g.getSoldiers(side)[moves[0][index]];
-    cout<<"S "<< pawn.getcorX()<<" "<<pawn.getcorY()<<( (moves[1][index]==0) ? (" M ") : (" B "))<<moves[2][index]<<" "<<moves[3][index];
-    return gg;
+    return index;
+}
+
+
+int worstchild(game g, Pawn::Side side,vector<vector<int> > moves) {
+    int min_h = 20000;
+    int index = 0;
+    for(int i=0; i< moves.at(0).size(); i++)
+    {
+        int temp = c_heuristic(g, sideToBox(side), moves[0][i], moves[1][i], moves[2][i], moves[3][i], g.heuristic);
+        if(temp<min_h){
+            min_h = temp;
+            index = i;
+        }
+    }
+    cout<<endl;
+    return index;
 }
 
 game::BOX sideToBox(Pawn::Side side) { return (side==Pawn::WHITE) ? (game::WHITE) : (game::BLACK);}
 
-//int MinVal(int state[8][8], int alpha, int beta, int numPlies)
+//int MinVal(game g, int alpha, int beta, int numPlies,Pawn::Side p)
 //{
 //    int child;
 //    int bestChild;
-//    if (numPlies==0)
-//        return utility(state);
+//    vector<int> moves=getMoves(g,p);
+//    if (numPlies==1)
+//        return worstchild();
 //    vector<int[8][8]> children=getChildren(state);
 //    for (auto & i : children)
 //    {
@@ -419,8 +434,8 @@ game::BOX sideToBox(Pawn::Side side) { return (side==Pawn::WHITE) ? (game::WHITE
 //    }
 //    return bestChild;
 //}
-//
-//
+
+
 //int MaxVal(int state[8][8], int alpha, int beta, int numPlies)
 //{
 //    if (numPlies==0)
@@ -472,11 +487,11 @@ int main()
     initialize_heuristic();
     game g;
     vector<vector<int> > moves=getMoves(g,Pawn::BLACK);
-    for(int i(0);i<moves[0].size();i++)
-    {
-        cout<<moves[0][i]<<' '<<moves[1][i]<<' '<<moves[2][i]<<' '<<moves[3][i]<<endl;
-        int h=c_heuristic(g,game::BLACK,moves[0][i],moves[1][i],moves[2][i],moves[3][i],0);
+    //for(int i(0);i<moves[0].size();i++)
+    //{
+      //  cout<<moves[0][i]<<' '<<moves[1][i]<<' '<<moves[2][i]<<' '<<moves[3][i]<<endl;
+        int h=c_heuristic(g,game::BLACK,0,0,0,0,0);
         cout<<h<<endl;
-    }
+    //}
     return 0;
 }
