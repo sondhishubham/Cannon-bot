@@ -130,10 +130,13 @@ bool isEnemyPawnAt(int x, int y, game::BOX board[8][8],game::BOX b);
 bool isEnemyAttacking(int x, int y, game::BOX board[8][8],game::BOX b);
 bool isSelfPawnAt(int x, int y, game::BOX board[8][8],game::BOX b);
 bool isSelfTownHallAt(int x, int y, game::BOX b);
+bool isEnemyTownHallAt(int x, int y, game::BOX b);
 
 void initialize_heuristic();
 
 game::BOX sideToBox(Pawn::Side side);
+
+int MaxVal(game game, int alpha, int beta,int maxPlies, int numPlies, Pawn::Side p);
 
 vector<vector<int> > getMoves(game g, Pawn::Side p) {
     vector<Pawn> soldiers = g.getSoldiers(p);
@@ -163,6 +166,12 @@ vector<vector<int> > getMoves(game g, Pawn::Side p) {
         }
         if (isEnemyPawnAt(x + 1, y, g.board, curBox)) {
             addMove(x + 1, y, i, 0, moves, g.board, curBox);
+        }
+        if(isEnemyTownHallAt(x-1,y,curBox)){
+            addMove(x-1,y,i,0,moves,g.board,curBox);
+        }
+        if(isEnemyTownHallAt(x+1,y,curBox)){
+            addMove(x+1,y,i,0,moves,g.board,curBox);
         }
 //        cout << "the size of possible moves of x is " << moves.at(2).size() << endl;
 
@@ -260,6 +269,12 @@ bool isSelfTownHallAt(int x, int y, game::BOX b) {
     return (y==0 && x%2==0);
 }
 
+bool isEnemyTownHallAt(int x, int y, game::BOX b){
+    if(b==game::BLACK)
+        return (y==0 && x%2==0);
+    return (y==7 && x%2==1);
+}
+
 bool isEnemyPawnAt(int x, int y, game::BOX board[8][8],game::BOX b) {
     if(x>7 || x<0 || y>7 || y<0)
         return false;
@@ -295,7 +310,7 @@ int c_heuristic(game g,game::BOX b,int i,int shot, int x,int y,int currH)//destr
     int currX = player.getcorX();
     int currY = player.getcorY();
     if (enemy == game::WHITE) {
-        if (isSelfTownHallAt(x, y, enemy)) {
+        if (isSelfTownHallAt(x, y, enemy)&&(destroyedWhite[x/2]==1)) {
             vector<Pawn> blacks = g.getBlack();
             int sum = 0, xx, yy, townHall = x / 2;
             //cout<<townHall;
@@ -311,12 +326,12 @@ int c_heuristic(game g,game::BOX b,int i,int shot, int x,int y,int currH)//destr
             for (int i = 0; i < 4; i++)
                 currH += (destroyedBlack[i] * h_whites[i][x][y]+3);
         }
-        else if(shot==0)
+        if(shot==0&& destroyedWhite[x/2]!=0)
         {
             for(int i(0);i<4;i++) currH+=(h_blacks[i][x][y]-h_blacks[i][currX][currY]);
         }
     } else {
-        if (isSelfTownHallAt(x, y, enemy)) {
+        if (isSelfTownHallAt(x, y, enemy)&&(destroyedBlack[x/2]==1)) {
             vector<Pawn> whites = g.getWhite();
             int sum = 0, xx, yy, townHall = x / 2;
             for (int i(0); i < whites.size(); i++) {
@@ -328,10 +343,11 @@ int c_heuristic(game g,game::BOX b,int i,int shot, int x,int y,int currH)//destr
             currH -= (128 * 12 - sum);
         }
         else if (g.board[x][y] == enemy) {
+//            cout<<"i am here";
             for (int i = 0; i < 4; i++)
                 currH -= (destroyedWhite[i] * h_blacks[i][x][y]+3);
         }
-        else if(shot==0)
+        if(shot==0&&destroyedWhite[x/2]!=0)
         {
             for(int i(0);i<4;i++) currH-=(h_whites[i][x][y]-h_whites[i][currX][currY]);
         }
@@ -374,13 +390,9 @@ game playMove(game g,game::BOX b,int i, int shot, int x, int y) {
             gg.destroyedWhites.at(x/2) = 0;
     }
     gg.heuristic=h;
-    cout<<' '<<h<<endl;
+    //cout<<' '<<h<<endl;
     return gg;
 }
-
-
-//int MaxVal(int state[8][8], int alpha,int beta, int numPlies);
-
 
 int bestchild(game g, Pawn::Side side,vector<vector<int> > moves) {
     int max_h = -20000;
@@ -394,7 +406,7 @@ int bestchild(game g, Pawn::Side side,vector<vector<int> > moves) {
         }
     }
     cout<<endl;
-    return index;
+    return max_h;
 }
 
 
@@ -410,49 +422,58 @@ int worstchild(game g, Pawn::Side side,vector<vector<int> > moves) {
         }
     }
     cout<<endl;
-    return index;
+    return min_h;
 }
 
 game::BOX sideToBox(Pawn::Side side) { return (side==Pawn::WHITE) ? (game::WHITE) : (game::BLACK);}
+game::BOX enemySidetoBox(Pawn::Side side) { return (side==Pawn::WHITE) ? (game::BLACK) : (game::WHITE);}
+Pawn::Side enemy(Pawn::Side side){ return (side==Pawn::WHITE) ? (Pawn::BLACK) : (Pawn::WHITE);}
 
-//int MinVal(game g, int alpha, int beta, int numPlies,Pawn::Side p)
-//{
-//    int child;
-//    int bestChild;
-//    vector<int> moves=getMoves(g,p);
-//    if (numPlies==1)
-//        return worstchild();
-//    vector<int[8][8]> children=getChildren(state);
-//    for (auto & i : children)
-//    {
-////        int[8][8] s = children.at(i);
-//        child = MaxVal(i,alpha,beta, numPlies-1);
-//        beta = min(beta,child);
-//        bestChild = min(bestChild,child);
-//        if (alpha>=beta) return child;
-//
-//    }
-//    return bestChild;
-//}
+int MinVal(game g, int alpha, int beta,int maxPlies, int numPlies,Pawn::Side p)
+{
+    int child,index(0);
+    int bestChild=10000;
+    vector< vector <int> > children = getMoves(g,p);
+    if (numPlies==1)
+        return worstchild(g, p, children);
+    for (int i(0);i<children.size();i++)
+    {
+        game gg=playMove(g,enemySidetoBox(p),children[0][i],children[1][i],children[2][i],children[3][i]);
+        child = MaxVal(gg,alpha,beta,maxPlies,numPlies-1,enemy(p));
+        beta = min(beta,child);
+        if(bestChild>child){
+            index = i;
+            bestChild = child;
+        }
+        if (alpha>=beta){
+            if(maxPlies==numPlies)return i; else return child;
+        }
+    }
+    if(maxPlies==numPlies)return index; else return bestChild;
+}
 
-
-//int MaxVal(int state[8][8], int alpha, int beta, int numPlies)
-//{
-//    if (numPlies==0)
-//        return utility(state);
-//
-//    int bestChild;
-//    vector<int[8][8]> children = getChildren(state);
-//    for (auto & i : children)
-//    {
-////        int[8][8] s = children.at(i);
-//        int child = MinVal(i,alpha,beta,numPlies-1);
-//        beta = max(beta,child);
-//        bestChild = max(bestChild,child);
-//        if (alpha>=beta) return child;
-//    }
-//    return bestChild;
-//}
+int MaxVal(game g, int alpha, int beta,int maxPlies, int numPlies, Pawn::Side p)
+{
+    int child,index(0);
+    int bestChild=-10000;
+    vector< vector <int> > children = getMoves(g,p);
+    if (numPlies==1)
+        return bestchild(g,p,children);
+    for (int i(0);i<children.size();i++)
+    {
+        game gg=playMove(g,enemySidetoBox(p),children[0][i],children[1][i],children[2][i],children[3][i]);
+        child = MinVal(gg,alpha,beta,maxPlies,numPlies-1,enemy(p));
+        beta = max(beta,child);
+        if(bestChild<child){
+            index = i;
+            bestChild = child;
+        }
+        if (alpha>=beta){
+            if(maxPlies==numPlies)return i; else return child;
+        }
+    }
+    if(maxPlies==numPlies)return index; else return bestChild;
+}
 
 void print_heuristic()
 {
@@ -487,11 +508,11 @@ int main()
     initialize_heuristic();
     game g;
     vector<vector<int> > moves=getMoves(g,Pawn::BLACK);
-    //for(int i(0);i<moves[0].size();i++)
-    //{
-      //  cout<<moves[0][i]<<' '<<moves[1][i]<<' '<<moves[2][i]<<' '<<moves[3][i]<<endl;
-        int h=c_heuristic(g,game::BLACK,0,0,0,0,0);
-        cout<<h<<endl;
-    //}
+    g=playMove(g,game::BLACK,0,0,3,3);
+    g=playMove(g,game::WHITE,0,0,4,2);
+    printBoard(g.board);
+    int h1=c_heuristic(g,game::BLACK,0,0,2,2,0);
+    int h2=c_heuristic(g,game::BLACK,0,0,4,2,0);
+    cout<<h1<<' '<<h2<<endl;
     return 0;
 }
