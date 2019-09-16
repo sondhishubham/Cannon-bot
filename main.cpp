@@ -6,7 +6,7 @@ using namespace std;
 
 int h_blacks[4][8][8];
 int h_whites[4][8][8];
-int MAX_PLIES = 6;
+int MAX_PLIES = 4;
 //int NUM_MOVES = 10;
 
 class Pawn {
@@ -461,7 +461,7 @@ int MinVal(game g, int alpha, int beta,int maxPlies, int numPlies,Pawn::Side p)
     for (int i(0);i<children[0].size();i++)
 //    for (int i(0);i<NUM_MOVES;i++)
     {
-        game gg = playMove(g,enemySidetoBox(p),children[0][i],children[1][i],children[2][i],children[3][i]);
+        game gg = playMove(g,sideToBox(p),children[0][i],children[1][i],children[2][i],children[3][i]);
         child = MaxVal(gg,alpha,beta,maxPlies,numPlies-1,enemy(p));
         beta = min(beta,child);
         if(bestChild > child){
@@ -469,7 +469,7 @@ int MinVal(game g, int alpha, int beta,int maxPlies, int numPlies,Pawn::Side p)
             bestChild = child;
         }
         if (alpha>=beta){
-            //cout<<"pruning now"<<endl;
+            //cout<<"pruning now "<<i<<endl;
             //if(maxPlies==numPlies)return index; else return bestChild;
             break;
         }
@@ -490,15 +490,15 @@ int MaxVal(game g, int alpha, int beta,int maxPlies, int numPlies, Pawn::Side p)
     for (int i(0);i<children[0].size();i++)
 //    for (int i(0);i<NUM_MOVES;i++)
     {
-        game gg=playMove(g,enemySidetoBox(p),children[0][i],children[1][i],children[2][i],children[3][i]);
+        game gg=playMove(g,sideToBox(p),children[0][i],children[1][i],children[2][i],children[3][i]);
         child = MinVal(gg,alpha,beta,maxPlies,numPlies-1,enemy(p));
-        alpha = max(beta,child);
+        alpha = max(alpha,child);
         if(bestChild < child){
             index = i;
             bestChild = child;
         }
         if (alpha>=beta){
-            //cout<<"pruning now"<<endl;
+            //cout<<"pruning now "<<i<<endl;
             //if(maxPlies==numPlies)return index; else return bestChild;
             break;
         }
@@ -552,9 +552,26 @@ int main()
 //    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
 //    cout<<"time taken by playMove: "<<duration.count()<<endl;
 
+    if(player==2){
+    	while(true){
+    		cin>>s>>x1>>y1>>b>>x2>>y2;
+    		g = playMove(g, game::BLACK, g.getPawn(x1, y1, Pawn::BLACK), (int)(b=='B'), x2, y2);
+
+    		vector<vector<int> > moves = getMoves(g, Pawn::WHITE);
+    		int index = MinVal(g, -10000, 10000, MAX_PLIES, MAX_PLIES, Pawn::WHITE);
+
+    		Pawn pawn = g.getSoldiers(Pawn::WHITE)[moves[0][index]];
+    		g = playMove(g,game::WHITE,moves[0][index],moves[1][index],moves[2][index],moves[3][index]);
+   		string m = ( (moves[1][index]==0) ? (" M ") : (" B ") );
+		cout<<"S "<<pawn.getcorX()<<" "<<pawn.getcorY()<<m<<moves[2][index]<<" "<<moves[3][index]<<endl;
+
+    	}
+    	return 0;
+    }
     while(true){
     	vector<vector<int> > moves = getMoves(g, Pawn::BLACK);
     	int index = MaxVal(g, -10000, 10000, MAX_PLIES, MAX_PLIES, Pawn::BLACK);
+//    	cout<<index<<endl;
 
     	Pawn pawn = g.getSoldiers(Pawn::BLACK)[moves[0][index]];
     	g = playMove(g,game::BLACK,moves[0][index],moves[1][index],moves[2][index],moves[3][index]);
