@@ -167,7 +167,7 @@ vector<vector<int> > getMoves(game g, Pawn::Side p) {
         //CANNON MOVES
         if (isSelfPawnAt(x + 1, y, g.board, p) && isSelfPawnAt(x + 2, y, g.board, p)) {
             //Horizontal cannon
-            if (!isEnemyPawnAt(x + 3, y, g.board, p)) {
+            if (!isEnemyPawnAt(x + 3, y, g.board, p) && !isEnemyTownHallAt(x + 3, y, p)) {
                 // cannon move
                 addMove(x + 3, y, i, 0, moves, g.board, p);
                 //cannon shot
@@ -176,7 +176,7 @@ vector<vector<int> > getMoves(game g, Pawn::Side p) {
                     addMove(x + 5, y, i, 1, moves, g.board, p);
                 }
             }
-            if (!isEnemyPawnAt(x - 1, y, g.board, p)) {
+            if (!isEnemyPawnAt(x - 1, y, g.board, p) && !isEnemyTownHallAt(x - 1, y, p)) {
                 int tail = g.getPawn(x + 2, y);
                 addMove(x - 1, y, tail, 0, moves, g.board, p);
                 if (!isSelfPawnAt(x - 1, y, g.board, p)) {
@@ -188,14 +188,14 @@ vector<vector<int> > getMoves(game g, Pawn::Side p) {
 
         if (isSelfPawnAt(x, y+1, g.board, p) && isSelfPawnAt(x, y+2, g.board, p)) {
             //vertical cannon
-            if (!isEnemyPawnAt(x, y + 3, g.board, p)) {
+            if (!isEnemyPawnAt(x, y + 3, g.board, p) && !isEnemyTownHallAt(x, y + 3, p)) {
                 addMove(x, y + 3, i, 0, moves, g.board, p);
                 if (!isSelfPawnAt(x, y + 3, g.board, p)) {
                     addMove(x, y + 4, i, 1, moves, g.board, p);
                     addMove(x, y + 5, i, 1, moves, g.board, p);
                 }
             }
-            if (!isEnemyPawnAt(x, y - 1, g.board, p)) {
+            if (!isEnemyPawnAt(x, y - 1, g.board, p) && !isEnemyTownHallAt(x, y - 1, p)) {
                 int tail = g.getPawn(x , y+2);
                 addMove(x, y - 1, tail, 0, moves, g.board, p);
                 if (!isSelfPawnAt(x, y - 1, g.board, p)) {
@@ -207,14 +207,14 @@ vector<vector<int> > getMoves(game g, Pawn::Side p) {
 
         if (isSelfPawnAt(x + 1, y - 1, g.board, p) && isSelfPawnAt(x + 2, y - 2, g.board, p)) {
             //top-right cannon
-            if (!isEnemyPawnAt(x + 3, y - 3, g.board, p)) {
+            if (!isEnemyPawnAt(x + 3, y - 3, g.board, p) && !isEnemyTownHallAt(x + 3, y - 3, p)) {
                 addMove(x + 3, y - 3, i, 0, moves, g.board, p);
                 if (!isSelfPawnAt(x + 3, y - 3, g.board, p)) {
                     addMove(x + 4, y - 4, i, 1, moves, g.board, p);
                     addMove(x + 5, y - 5, i, 1, moves, g.board, p);
                 }
             }
-            if (!isEnemyPawnAt(x - 1, y + 1, g.board, p)) {
+            if (!isEnemyPawnAt(x - 1, y + 1, g.board, p) && !isEnemyTownHallAt(x - 1, y + 1, p)) {
                 int tail = g.getPawn(x + 2, y-2);
                 addMove(x - 1, y + 1, tail, 0, moves, g.board, p);
                 if (!isSelfPawnAt(x - 1, y + 1, g.board, p)) {
@@ -226,14 +226,14 @@ vector<vector<int> > getMoves(game g, Pawn::Side p) {
 
         if (isSelfPawnAt(x + 1, y + 1, g.board, p) && isSelfPawnAt(x + 2, y + 2, g.board, p)) {
             //bottom right cannon
-            if (!isEnemyPawnAt(x + 3, y + 3, g.board, p)) {
+            if (!isEnemyPawnAt(x + 3, y + 3, g.board, p) && !isEnemyTownHallAt(x + 3, y + 3, p)) {
                 addMove(x + 3, y + 3, i, 0, moves, g.board, p);
                 if (!isSelfPawnAt(x + 3, y + 3, g.board, p)) {
                     addMove(x + 4, y + 4, i, 1, moves, g.board, p);
                     addMove(x + 5, y + 5, i, 1, moves, g.board, p);
                 }
             }
-            if (!isEnemyPawnAt(x - 1, y - 1, g.board, p)) {
+            if (!isEnemyPawnAt(x - 1, y - 1, g.board, p) && !isEnemyTownHallAt(x - 1, y - 1, p)) {
                 int tail = g.getPawn(x + 2, y + 2);
                 addMove(x - 1, y - 1, tail, 0, moves, g.board, p);
                 if (!isSelfPawnAt(x - 1, y - 1, g.board, p)) {
@@ -591,30 +591,30 @@ int main()
             // printBoard(g.board);
             cin>>s>>x1>>y1>>b>>x2>>y2;
             vector<int> move{g.getPawn(x1, y1), (int)(b=='B'), x2, y2};
-    		g = playMove(g, Pawn::BLACK, move);
-            for(int i=0; i<4; i++){
-                cerr<<"black townhall "<<i<<" "<<g.destroyedBlacks[i]<<endl;
-                cerr<<"white townhall "<<i<<" "<<g.destroyedWhites[i]<<endl;
-            }
+    	    g = playMove(g, Pawn::BLACK, move);
+            //for(int i=0; i<4; i++){
+            //    cerr<<"black townhall "<<i<<" "<<g.destroyedBlacks[i]<<endl;
+            //    cerr<<"white townhall "<<i<<" "<<g.destroyedWhites[i]<<endl;
+            //}
             // printBoard(g.board);
 
-    		vector<vector<int> > moves = getMoves(g, Pawn::WHITE);
+    	    vector<vector<int> > moves = getMoves(g, Pawn::WHITE);
             //for(int i=0; i<moves.size(); i++){
             //  cerr<<moves[i][0]<<' '<<moves[i][1]<<' '<<moves[i][2]<<' '<<moves[i][3]<<endl;
             //}
       	    vector<Pawn> pawns = g.getSoldiers(Pawn::WHITE);
-  		    if(g.whiteAlive<8)
-	    	{
-			    MAX_PLIES = 5;
-			    if(g.blackAlive<8)
-				    MAX_PLIES = 5;
-    		}
-    		int index = MinVal(g, -10000, 10000, MAX_PLIES, MAX_PLIES, Pawn::WHITE);
+  	    if(g.whiteAlive<8)
+	    {
+		    MAX_PLIES = 5;
+		    if(g.blackAlive<7)
+			    MAX_PLIES = 6;
+    	    }
+    	    int index = MinVal(g, -10000, 10000, MAX_PLIES, MAX_PLIES, Pawn::WHITE);
 
-    		Pawn pawn = pawns[moves[index][0]];
-    		g = playMove(g,Pawn::WHITE,moves[index]);
-   		    string m = ( (moves[index][1]==0) ? (" M ") : (" B ") );
-		    cout<<"S "<<pawn.getcorX()<<" "<<pawn.getcorY()<<m<<moves[index][2]<<" "<<moves[index][3]<<endl;
+    	    Pawn pawn = pawns[moves[index][0]];
+    	    g = playMove(g,Pawn::WHITE,moves[index]);
+   	    string m = ( (moves[index][1]==0) ? (" M ") : (" B ") );
+	    cout<<"S "<<pawn.getcorX()<<" "<<pawn.getcorY()<<m<<moves[index][2]<<" "<<moves[index][3]<<endl;
             // g = best_first(g,Pawn::WHITE);
     	}
     	return 0;
@@ -629,17 +629,21 @@ int main()
         vector<Pawn> pawns = g.getSoldiers(Pawn::BLACK);
     	if(g.blackAlive<8)
     	{
-		    MAX_PLIES = 5;
-		    if(g.whiteAlive<8)
-			    MAX_PLIES = 5;
-	    }
+		MAX_PLIES = 5;
+		if(g.whiteAlive<5){
+			MAX_PLIES = 6;
+			if(g.blackAlive<5){
+				MAX_PLIES = 7;
+			}
+		}
+	}
     	int index = MaxVal(g, -10000, 10000, MAX_PLIES, MAX_PLIES, Pawn::BLACK);
         cerr<<"black did maxval\n";
     	Pawn pawn = pawns[moves[index][0]];
     	g = playMove(g,Pawn::BLACK,moves[index]);
         cerr<<"black played\n";
-   	    string m = ( (moves[index][1]==0) ? (" M ") : (" B ") );
-	    cout<<"S "<<pawn.getcorX()<<" "<<pawn.getcorY()<<m<<moves[index][2]<<" "<<moves[index][3]<<endl;
+   	string m = ( (moves[index][1]==0) ? (" M ") : (" B ") );
+	cout<<"S "<<pawn.getcorX()<<" "<<pawn.getcorY()<<m<<moves[index][2]<<" "<<moves[index][3]<<endl;
         // g = best_first(g,Pawn::BLACK);
 
         cin>>s>>x1>>y1>>b>>x2>>y2;
