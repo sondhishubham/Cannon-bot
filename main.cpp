@@ -8,9 +8,9 @@ using namespace std;
 int h_blacks[4][8][8];
 int h_whites[4][8][8];
 int MAX_PLIES = 4;
-int SOLDIER_VAL = 3;
-int MOVES_WEIGHT=20;
-int WIN=0;
+int SOLDIER_VAL = 5;
+int MOVES_WEIGHT=0;
+int WIN=10000;
 //int NUM_MOVES = 10;
 
 class Pawn {
@@ -444,7 +444,7 @@ int bestchild(game g, Pawn::Side side,vector<vector<int> > moves, bool last) {
     for(int i(0);i<white_moves.size();i++){
         movesWeight -= 3*white_moves[i][3];
     }
-    for(int i=0; i< moves.at(0).size(); i++)
+    for(int i=0; i< moves.size(); i++)
     {
         int temp = c_heuristic(g, side, moves[i], g.heuristic)+movesWeight;
         if(temp>max_h){
@@ -619,12 +619,13 @@ int main()
     	}
     	return 0;
     }
-    vector<int> temp_move{5,0,1,6};
+    // vector<int> temp_move{5,0,1,6};
     // g = playMove(g,Pawn::BLACK,temp_move);
     // cout<<"S 2 7 M 1 6"<<endl;
     while(true){
     	// printBoard(g.board);
     	vector<vector<int> > moves = getMoves(g, Pawn::BLACK);
+        cerr<<"black got moves\n";
         vector<Pawn> pawns = g.getSoldiers(Pawn::BLACK);
     	if(g.blackAlive<8)
     	{
@@ -633,8 +634,10 @@ int main()
 			    MAX_PLIES = 5;
 	    }
     	int index = MaxVal(g, -10000, 10000, MAX_PLIES, MAX_PLIES, Pawn::BLACK);
+        cerr<<"black did maxval\n";
     	Pawn pawn = pawns[moves[index][0]];
     	g = playMove(g,Pawn::BLACK,moves[index]);
+        cerr<<"black played\n";
    	    string m = ( (moves[index][1]==0) ? (" M ") : (" B ") );
 	    cout<<"S "<<pawn.getcorX()<<" "<<pawn.getcorY()<<m<<moves[index][2]<<" "<<moves[index][3]<<endl;
         // g = best_first(g,Pawn::BLACK);
