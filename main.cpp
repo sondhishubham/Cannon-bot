@@ -498,7 +498,7 @@ hIndex MinVal(game g, int alpha, int beta, int maxPlies, int numPlies, Pawn::Sid
     if(children.size()==0){
         cerr<<"sending -1 at MinVal "<<(maxPlies-numPlies)<<" "<<getMoves(g,p).size()<<endl;
         printBoard(g.board);
-        return make_pair(-1,-3*WIN);
+        return make_pair(-1,g.heuristic);
     }
     if (numPlies==1)
         return worstchild(g, p, children,(maxPlies==1));
@@ -533,7 +533,7 @@ hIndex MaxVal(game g, int alpha, int beta,int maxPlies, int numPlies, Pawn::Side
     if(children.size()==0){
         cerr<<"sending -1 at maxval "<<numPlies<<" "<<getMoves(g,p).size()<<endl;
         printBoard(g.board);
-        return make_pair(-1,3*WIN);
+        return make_pair(-1,g.heuristic);
     }
 
     if (numPlies==1)
