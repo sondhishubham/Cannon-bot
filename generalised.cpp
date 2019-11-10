@@ -5,8 +5,8 @@
 #include <fstream>
 using namespace std;
 
-vector<vector<vector<int> > > h_blacks;
-vector<vector<vector<int> > > h_whites;
+int h_blacks[5][10][10];
+int h_whites[5][10][10];
 int m,n;
 int MAX_PLIES = 4;
 int BLACK_SOLDIER_VAL = 4;
@@ -16,7 +16,8 @@ int BLACK_MOVES = 3;
 int MOVES_WEIGHT = 0;
 int WIN=900000;
 int NUM_SOLDIERS;
-typedef pair<int,int> hIndex;
+typedef pair<int,int> hDex;
+typedef pair<hDex,vector<int> > hIndex;
 
 class Pawn {
 public:
@@ -50,11 +51,11 @@ private:
 
 class game{
 public:
-    vector<vector<int> > board = vector<vector<int> >(m,vector<int>(n,0));// positive integers represent blacks and negative integers represent whites
+    int board[10][10];// = vector<vector<int> >(m,vector<int>(n,0));// positive integers represent blacks and negative integers represent whites
     game()
     {
         heuristic=0;
-        // for(int i(0);i<m;i++) for(int j(0);j<n;j++)board[i][j]=0;
+        for(int i(0);i<m;i++) for(int j(0);j<n;j++)board[i][j]=0;
         for(int i(0);i<m/2;i++) { destroyedWhites.push_back(1);destroyedBlacks.push_back(1);}
         int blackCount(1),whiteCount(-1);
         for(int i=0; i<m; i+=2) {
@@ -110,24 +111,24 @@ Pawn::Side box2Side(int p){
 
 Pawn::Side getEnemySide(int p){return  (p>0) ? (Pawn::WHITE) : (Pawn::BLACK);}
 
-void printBoard(vector<vector<int> > b){
+void printBoard(int board[10][10]){
     cerr<<endl;
     for(int i(0);i<n;i++)
     {
         for(int j(0);j<m;j++)
         {
-            if(b[j][i]==0) cerr<<".\t";
-            else cerr<<b[j][i]<<'\t';
+            if(board[j][i]==0) cerr<<".\t";
+            else cerr<<board[j][i]<<'\t';
         }
         cerr<<endl;
     }
     cerr<<endl;
 }
 
-void addMove(int x, int y, int i,int shot, vector<vector<int> >&moves, vector<vector<int> > board,Pawn::Side s);
-bool isEnemyPawnAt(int x, int y, vector<vector<int> > board,Pawn::Side s);
-bool isEnemyAttacking(int x, int y, vector<vector<int> > board,Pawn::Side s);
-bool isSelfPawnAt(int x, int y, vector<vector<int> > board,Pawn::Side s);
+void addMove(int x, int y, int i,int shot, vector<vector<int> >&moves, int board[10][10],Pawn::Side s);
+bool isEnemyPawnAt(int x, int y, int board[10][10],Pawn::Side s);
+bool isEnemyAttacking(int x, int y, int board[10][10],Pawn::Side s);
+bool isSelfPawnAt(int x, int y, int board[10][10],Pawn::Side s);
 bool isSelfTownHallAt(int x, int y, Pawn::Side s);
 bool isEnemyTownHallAt(int x, int y, Pawn::Side s);
 void initialize_heuristic();
@@ -252,7 +253,7 @@ vector<vector<int> > getMoves(game g, Pawn::Side p) {
     }
     return moves;
 }
-bool isSelfPawnAt(int x, int y, vector<vector<int> > board,Pawn::Side s) {
+bool isSelfPawnAt(int x, int y, int board[10][10],Pawn::Side s) {
     if(x>m-1 || x<0 || y>n-1 || y<0)
         return false;
     if(board[x][y]==0) {
@@ -275,7 +276,7 @@ bool isEnemyTownHallAt(int x, int y, Pawn::Side s){
 }
 
 
-bool isEnemyPawnAt(int x, int y, vector<vector<int> > board,Pawn::Side s) {
+bool isEnemyPawnAt(int x, int y, int board[10][10],Pawn::Side s) {
     if(x>m-1 || x<0 || y>n-1 || y<0)
         return false;
     if(board[x][y]==0)
@@ -284,14 +285,14 @@ bool isEnemyPawnAt(int x, int y, vector<vector<int> > board,Pawn::Side s) {
         return board[x][y]<0;
 }
 
-bool isEnemyAttacking(int x, int y, vector<vector<int> > board,Pawn::Side b) {
+bool isEnemyAttacking(int x, int y, int board[10][10],Pawn::Side b) {
     if(b==Pawn::BLACK)
         return (isEnemyPawnAt(x+1,y,board,b) || isEnemyPawnAt(x+1,y-1,board,b) || isEnemyPawnAt(x,y-1,board,b) || isEnemyPawnAt(x-1,y-1,board,b) || isEnemyPawnAt(x-1,y,board,b));
     else
         return (isEnemyPawnAt(x+1,y,board,b) || isEnemyPawnAt(x+1,y+1,board,b) || isEnemyPawnAt(x,y+1,board,b) || isEnemyPawnAt(x-1,y+1,board,b) || isEnemyPawnAt(x-1,y,board,b));
 }
 
-void addMove(int x, int y, int i, int shot, vector<vector<int> >&v, vector<vector<int> > board, Pawn::Side b){
+void addMove(int x, int y, int i, int shot, vector<vector<int> >&v, int board[10][10], Pawn::Side b){
     if(x>m-1 || x<0 || y>n-1 || y<0 || isSelfPawnAt(x,y,board,b) || isSelfTownHallAt(x,y,b)) return;
 //    cerr<<"adding move: "<<x<<","<<y<<" "<<i<<" "<<shot<<endl;
     vector<int> curMove{i,shot,x,y};
@@ -455,15 +456,20 @@ hIndex bestchild(game g, Pawn::Side side,vector<vector<int> > moves, bool last) 
     for(int i(0);i<white_moves.size();i++){
         movesWeight -= WHITE_MOVES*white_moves[i][3];
     }
+    std::vector<int> townHalls;
     for(int i=0; i< moves.size(); i++)
     {
+        if((isSelfTownHallAt(moves[i][2],moves[i][3],Pawn::WHITE))&&(g.destroyedWhites[moves[i][2]/2]!=0)){
+            townHalls.push_back((moves[i][2]/2));
+        }
         int temp = c_heuristic(g, side, moves[i], g.heuristic)+movesWeight;
         if(temp>max_h){
             max_h = temp;
             index = i;
         }
     }
-    hIndex val=make_pair(index,max_h);
+    hDex v=make_pair(index,max_h);
+    hIndex val=make_pair(v,townHalls);
     return val;
 }
 
@@ -480,15 +486,20 @@ hIndex worstchild(game g, Pawn::Side side,vector<vector<int> > moves, bool last)
     for(int i(0);i<white_moves.size();i++){
         movesWeight -= WHITE_MOVES*white_moves[i][3];
     }
+    std::vector<int> townHalls;
     for(int i=0; i< moves.size(); i++)
     {
+        if((isSelfTownHallAt(moves[i][2],moves[i][3],Pawn::BLACK))&&(g.destroyedBlacks[moves[i][2]/2]!=0)){
+            townHalls.push_back(moves[i][2]/2);
+        }
         int temp = c_heuristic(g, side, moves[i], g.heuristic)+movesWeight;
         if(temp<min_h){
             min_h = temp;
             index = i;
         }
     }
-    hIndex val=make_pair(index,min_h);
+    hDex v=make_pair(index,min_h);
+    hIndex val=make_pair(v,townHalls);
     return val;
     // if(last) return index;
     // return min_h;
@@ -499,12 +510,13 @@ hIndex MinVal(game g, int alpha, int beta, int maxPlies, int numPlies, Pawn::Sid
 {
     int child,index(0);
     int bestChild=20000;
+    std::vector<int> townHalls;
     vector< vector <int> > children = getMoves(g,p);
     //check if no move is possible
     if(children.size()==0){
         cerr<<"sending -1 at MinVal "<<(maxPlies-numPlies)<<" "<<getMoves(g,p).size()<<endl;
-        printBoard(g.board);
-        return make_pair(-1,g.heuristic);
+        // printBoard(g.board);
+        return make_pair((make_pair(-1,g.heuristic)),townHalls);
     }
     if (numPlies==1)
         return worstchild(g, p, children,(maxPlies==1));
@@ -512,23 +524,22 @@ hIndex MinVal(game g, int alpha, int beta, int maxPlies, int numPlies, Pawn::Sid
     for (int i(0);i<children.size();i++)
 //    for (int i(0);i<NUM_MOVES;i++)
     {
-//        if (numPlies==maxPlies) 
-//cout<<"here"<<i<<endl; 
         game gg = playMove(g,p,children[i]);
-        child = (MaxVal(gg,alpha,beta,maxPlies,numPlies-1,enemy(p))).second;
+        hIndex k=MaxVal(gg,alpha,beta,maxPlies,numPlies-1,enemy(p));
+        child = (k.first).second;
+        std::vector<int> v=k.second;
         beta = min(beta,child);
         if(bestChild > child){
+            townHalls=v;
             index = i;
             bestChild = child;
         }
         if (alpha>=beta){
-            //cerr<<"pruning now "<<i<<endl;
-            //if(maxPlies==numPlies)return index; else return bestChild;
             break;
         }
     }
     // cerr<<"after searching over all moves at depth:"<<(maxPlies-numPlies)<<" best heuristic is: "<<bestChild<<endl;
-    hIndex val=make_pair(index,bestChild);
+    hIndex val=make_pair((make_pair(index,bestChild)),townHalls);
     return val;
     // if(maxPlies==numPlies)return index; else return bestChild;
 }
@@ -537,11 +548,12 @@ hIndex MaxVal(game g, int alpha, int beta,int maxPlies, int numPlies, Pawn::Side
 {
     int child,index(0);
     int bestChild = -20000;
+    std::vector<int> townHalls;
     vector< vector<int> > children = getMoves(g,p);
     if(children.size()==0){
         cerr<<"sending -1 at maxval "<<numPlies<<" "<<getMoves(g,p).size()<<endl;
         printBoard(g.board);
-        return make_pair(-1,g.heuristic);
+        return make_pair((make_pair(-1,g.heuristic)),townHalls);
     }
 
     if (numPlies==1)
@@ -551,11 +563,13 @@ hIndex MaxVal(game g, int alpha, int beta,int maxPlies, int numPlies, Pawn::Side
 //    for (int i(0);i<NUM_MOVES;i++)
     {
         game gg=playMove(g,p,children[i]);
-	//if (numPlies==maxPlies) cerr<<"here"<<i<<endl; 
-        child = (MinVal(gg,alpha,beta,maxPlies,numPlies-1,enemy(p))).second;
+        hIndex k=MinVal(gg,alpha,beta,maxPlies,numPlies-1,enemy(p));
+        child = (k.first).second;
+        std::vector<int> v=k.second;
         alpha = max(alpha,child);
         if(bestChild < child){
             index = i;
+            townHalls=k.second;
             bestChild = child;
         }
         if (alpha>=beta){
@@ -564,7 +578,7 @@ hIndex MaxVal(game g, int alpha, int beta,int maxPlies, int numPlies, Pawn::Side
             break;
         }
     }
-    hIndex val=make_pair(index,bestChild);
+    hIndex val=make_pair((make_pair(index,bestChild)),townHalls);
     return val;
     // if(maxPlies==numPlies)return index; else return bestChild;
 }
@@ -583,14 +597,13 @@ void print_heuristic(int x)
 void initialize_heuristic()
 {
     for(int x(0); x<m; x++){
-        cerr<<x<<":x"<<endl;
+        // cerr<<x<<":x"<<endl;
         for(int y(0); y<n; y++){
-            cerr<<y<<":y"<<endl;
+            // cerr<<y<<":y"<<endl;
             int val_black = pow(2, n-1-y);
             int val_white = pow(2, y);
             for(int j=0; j<m/2; j++){
                 int k = n/2-1-j, l = n/2+j;
-                cerr<<j<<":j"<<h_blacks.size()<<endl;
                 h_blacks[j][x][y] = (x > y+2*j || x+y < 2*j) ? 0 : val_black;
                 cerr<<"done\n";
                 h_whites[j][x][y] = (y > x+2*k || x+y > 2*l) ? 0 : val_white;
@@ -607,11 +620,11 @@ int main(int argc, char const *argv[])
     cin>>player>>n>>m>>time;
     NUM_SOLDIERS = 3*m/2;
     // cerr<<n<<m<<endl;
-    vector<int> v(n,0);
-    std::vector<std::vector<int> > v2(m,v);
-    std::vector<std::vector<std::vector<int> > > v3(m/2,v2);
-    h_blacks = v3;
-    h_whites = v3;
+    // vector<int> v(n,0);
+    // std::vector<std::vector<int> > v2(m,v);
+    // std::vector<std::vector<std::vector<int> > > v3(m/2,v2);
+    // h_blacks = v3;
+    // h_whites = v3;
     // initialize_heuristic();
     // for(int k=0;k<m/2;k++) print_heuristic(k);
     game g;
@@ -699,16 +712,25 @@ int main(int argc, char const *argv[])
             int heuristic = 0;
             if(iterative){
                 int numPlies = 1;
-                while(numPlies<=MAX_PLIES && heuristic<WIN/2){
+                while(numPlies<=MAX_PLIES && heuristic>-WIN/2){
+                    // cerr<<"heuristic:"<<heuristic<<" WIN/2:"<<-WIN/2<<endl;
                     hIndex bestMove = MinVal(g, -10000, 10000, numPlies, numPlies, Pawn::WHITE);
-                	index = bestMove.first;
-                    heuristic = bestMove.second;
+                    if((numPlies%2==0)&&(bestMove.second.size()!=0)){
+                        for(int i(0);i<bestMove.second.size();i++){
+                            g.destroyedWhites.at(bestMove.second[i])=0;
+                            cerr<<"second"<<endl;
+                        }
+                        numPlies=1;
+                        continue;
+                    }
+                	index = (bestMove.first).first;
+                    heuristic = (bestMove.first).second;
                     cerr<<"white did maxval at depth:"<<numPlies<<"with index:"<<index<<" and value:"<<heuristic<<endl;
                     numPlies++;
                     if(index<0) break;
                 }
             }
-            else index  = MinVal(g, -10000, 10000, MAX_PLIES, MAX_PLIES, Pawn::WHITE).first;
+            else index  = (MinVal(g, -10000, 10000, MAX_PLIES, MAX_PLIES, Pawn::WHITE).first).first;
 
     		Pawn pawn = pawns[moves[index][0]];
     		g = playMove(g,Pawn::WHITE,moves[index]);
@@ -744,13 +766,20 @@ int main(int argc, char const *argv[])
             int numPlies = 1;
             while(numPlies<=MAX_PLIES && heuristic<WIN/2){
                 hIndex bestMove = MaxVal(g, -10000, 10000, numPlies, numPlies, Pawn::BLACK);
-                index = bestMove.first;
-                heuristic = bestMove.second;
+                if((numPlies%2==0)&&(bestMove.second.size()!=0)){
+                    for(int i(0);i<bestMove.second.size();i++){
+                        g.destroyedBlacks.at(bestMove.second[i])=0;
+                    }
+                    numPlies=1;
+                    continue;
+                }
+                index = bestMove.first.first;
+                heuristic = bestMove.first.second;
                 cerr<<"black did maxval with index:"<<index<<" and value:"<<heuristic<<endl;
                 numPlies++;
             }
         }
-        else index = MaxVal(g, -10000, 10000, MAX_PLIES, MAX_PLIES, Pawn::BLACK).first;
+        else index =(MaxVal(g, -10000, 10000, MAX_PLIES, MAX_PLIES, Pawn::BLACK).first).first;
         cerr<<"maxval done\n";
         Pawn pawn = pawns[moves[index][0]];
     	g = playMove(g,Pawn::BLACK,moves[index]);
