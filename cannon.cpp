@@ -14,6 +14,8 @@ int WHITE_MOVES = 3;
 int BLACK_MOVES = 3;
 int MOVES_WEIGHT = 0;
 int WIN=900000;
+vector<std::vector<int> > movesRecordBlack;
+vector<std::vector<int> > movesRecordWhite;
 typedef pair<int,int> hDex;
 typedef pair<hDex,vector<int> > hIndex;
 //int NUM_MOVES = 10;
@@ -509,15 +511,20 @@ hIndex MinVal(game g, int alpha, int beta, int maxPlies, int numPlies, Pawn::Sid
     //check if no move is possible
     if(children.size()==0){
         cerr<<"sending -1 at MinVal "<<(maxPlies-numPlies)<<" "<<getMoves(g,p).size()<<endl;
-        printBoard(g.board);
-        return make_pair((make_pair(0,g.heuristic)),townHalls);
+        return make_pair((make_pair(-1,g.heuristic)),townHalls);
     }
+    std::vector<Pawn> pawns=g.getSoldiers(Pawn::WHITE);
     if (numPlies==1)
         return worstchild(g, p, children,(maxPlies==1));
 
     for (int i(0);i<children.size();i++)
-//    for (int i(0);i<NUM_MOVES;i++)
     {
+        Pawn po=pawns[children[i][0]];
+        for(int j(0);j<movesRecordWhite.size();j++){
+            if((movesRecordWhite.at(j).at(0)==po.getcorX())&&(movesRecordWhite.at(j).at(1)==po.getcorY())&&(movesRecordWhite.at(j).at(2)==children[i][1])&&(movesRecordWhite.at(j).at(3)==children[i][2])&&(movesRecordWhite.at(j).at(4)==children[i][3])){
+                continue;
+            }
+        }
         game gg = playMove(g,p,children[i]);
         hIndex k=MaxVal(gg,alpha,beta,maxPlies,numPlies-1,enemy(p));
         child = (k.first).second;
@@ -529,8 +536,6 @@ hIndex MinVal(game g, int alpha, int beta, int maxPlies, int numPlies, Pawn::Sid
             bestChild = child;
         }
         if (alpha>=beta){
-            //cerr<<"pruning now "<<i<<endl;
-            //if(maxPlies==numPlies)return index; else return bestChild;
             break;
         }
     }
@@ -549,15 +554,21 @@ hIndex MaxVal(game g, int alpha, int beta,int maxPlies, int numPlies, Pawn::Side
     if(children.size()==0){
         cerr<<"sending -1 at maxval "<<numPlies<<" "<<getMoves(g,p).size()<<endl;
         printBoard(g.board);
-        return make_pair((make_pair(0,g.heuristic)),townHalls);
+        return make_pair((make_pair(-1,g.heuristic)),townHalls);
     }
+    std::vector<Pawn> pawns=g.getSoldiers(Pawn::BLACK);
 
     if (numPlies==1)
         return bestchild(g,p,children,(maxPlies==1));
 
     for (int i(0);i<children.size();i++)
-//    for (int i(0);i<NUM_MOVES;i++)
     {
+        Pawn po=pawns[children[i][0]];
+        for(int j(0);j<movesRecordBlack.size();j++){
+            if((movesRecordBlack.at(j).at(0)==po.getcorX())&&(movesRecordBlack.at(j).at(1)==po.getcorY())&&(movesRecordBlack.at(j).at(2)==children[i][1])&&(movesRecordBlack.at(j).at(3)==children[i][2])&&(movesRecordBlack.at(j).at(4)==children[i][3])){
+                continue;
+            }
+        }
         game gg=playMove(g,p,children[i]);
         hIndex k=MinVal(gg,alpha,beta,maxPlies,numPlies-1,enemy(p));
         child = (k.first).second;
@@ -569,14 +580,11 @@ hIndex MaxVal(game g, int alpha, int beta,int maxPlies, int numPlies, Pawn::Side
             bestChild = child;
         }
         if (alpha>=beta){
-            //cerr<<"pruning now "<<i<<endl;
-            //if(maxPlies==numPlies)return index; else return bestChild;
             break;
         }
     }
     hIndex val=make_pair((make_pair(index,bestChild)),townHalls);
     return val;
-    // if(maxPlies==numPlies)return index; else return bestChild;
 }
 
 void print_heuristic()
@@ -606,6 +614,7 @@ void initialize_heuristic()
     }
 }
 
+
 int main(int argc, char const *argv[])
 {
 
@@ -616,55 +625,6 @@ int main(int argc, char const *argv[])
     cin>>player>>n>>m>>time;
     game g;
     bool iterative = true;
-
-//    auto start = chrono::high_resolution_clock::now();
-//    for(int i=0; i<10000; i++){
-//    	game gg = playMove(g,Pawn::BLACK,0,1,0,3);
-//    }
-//    auto stop = chrono::high_resolution_clock::now();
-//    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-//    cerr<<"time taken by playMove: "<<duration.count()<<endl;
-
-// //This is the code!!!
-//     string line;
-//     ifstream myfile(argv[1]);
-//     // myfile.open();
-//     char useless;
-//     char sh;
-//     int currX(0),currY(0),shot(0),nextX(0),nextY(0);
-//     bool blackFirst=true;
-//
-    // vector<int> move{g.getPawn(x1, y1), (int)(b=='B'), x2, y2};
-    // g = playMove(g, Pawn::BLACK, move);
-
-    // while (!myfile.eof())
-    // {
-    //     myfile>> useless;
-    //     myfile>> currX >> currY;
-    //     myfile>> sh;
-    //     if(sh=='M')shot=0;else shot=1;
-    //     myfile>> nextX >> nextY;
-    //     cerr<<currX<<","<<currY<<" "<<nextX<<","<<nextY<<endl;
-    //     int pawn = g.getPawn(currX,currY);
-    //     // cerr<<"pawn number: "<<pawn<<endl;
-    //     if(pawn>12 || pawn<0) break;
-    //     if(blackFirst){
-    //         vector<int> move{pawn,shot,nextX,nextY};
-    //         // cerr<<"got the move"<<endl;
-    //         g = playMove(g, Pawn::BLACK, move);
-    //         // cerr<<"played move"<<endl;
-    //         blackFirst=false;
-    //     }
-    //     else{
-    //         vector<int> move{pawn,shot,nextX, nextY};
-    //         g = playMove(g, Pawn::WHITE, move);
-    //         blackFirst=true;
-    //     }
-    //
-    //     // printBoard(g.board);
-    // }
-    // myfile.close();
-    // printBoard(g.board);
 
     if(player==2){
         WHITE_SOLDIER_VAL = 12;
@@ -690,7 +650,7 @@ int main(int argc, char const *argv[])
       	    vector<Pawn> pawns = g.getSoldiers(Pawn::WHITE);
   		    if(g.whiteAlive<10)
 	    	{
-			    MAX_PLIES = 4;
+			    MAX_PLIES = 5;
 			    if(g.blackAlive<6)
 				    MAX_PLIES = 6;
     		}
@@ -698,7 +658,7 @@ int main(int argc, char const *argv[])
             int heuristic = 0;
             if(iterative){
                 int numPlies = 1;
-                while(numPlies<=MAX_PLIES && heuristic<WIN/2){
+                while(numPlies<=MAX_PLIES && heuristic>-WIN/2){
                     hIndex bestMove = MinVal(g, -10000, 10000, numPlies, numPlies, Pawn::WHITE);
                     if((numPlies%2==0)&&(bestMove.second.size()!=0)){
                         for(int i(0);i<bestMove.second.size();i++){
@@ -717,10 +677,15 @@ int main(int argc, char const *argv[])
             else index  = (MinVal(g, -10000, 10000, MAX_PLIES, MAX_PLIES, Pawn::WHITE).first).first;
 
     		Pawn pawn = pawns[moves[index][0]];
+            int bAlivebefore=g.blackAlive;
+            int wAlivebefore=g.whiteAlive;
     		g = playMove(g,Pawn::WHITE,moves[index]);
+            if(g.blackAlive<bAlivebefore||g.whiteAlive<wAlivebefore){movesRecordBlack.clear();movesRecordWhite.clear();}
             cerr<<"white played\n";
    		    string m = ( (moves[index][1]==0) ? (" M ") : (" B ") );
 		    cout<<"S "<<pawn.getcorX()<<" "<<pawn.getcorY()<<m<<moves[index][2]<<" "<<moves[index][3]<<endl;
+            std::vector<int> v={pawn.getcorX(), pawn.getcorY(), moves[index][1], moves[index][2], moves[index][3]};
+            movesRecordWhite.push_back(v);
             // g = best_first(g,Pawn::WHITE);
     	}
     	return 0;
@@ -740,7 +705,7 @@ int main(int argc, char const *argv[])
         vector<Pawn> pawns = g.getSoldiers(Pawn::BLACK);
     	if(g.blackAlive<10)
     	{
-		          MAX_PLIES = 4;
+		          MAX_PLIES = 5;
 		          if(g.whiteAlive<6)
 			               MAX_PLIES = 6;
 	    }
@@ -766,11 +731,15 @@ int main(int argc, char const *argv[])
         else index =(MaxVal(g, -10000, 10000, MAX_PLIES, MAX_PLIES, Pawn::BLACK).first).first;
         cerr<<"maxval done\n";
         Pawn pawn = pawns[moves[index][0]];
-    	g = playMove(g,Pawn::BLACK,moves[index]);
+        int bAlivebefore=g.blackAlive;
+        int wAlivebefore=g.whiteAlive;
+        g = playMove(g,Pawn::WHITE,moves[index]);
+        if(g.blackAlive<bAlivebefore||g.whiteAlive<wAlivebefore){movesRecordBlack.clear();movesRecordWhite.clear();}
         cerr<<"black played\n";
    	    string m = ( (moves[index][1]==0) ? (" M ") : (" B ") );
 	    cout<<"S "<<pawn.getcorX()<<" "<<pawn.getcorY()<<m<<moves[index][2]<<" "<<moves[index][3]<<endl;
-        // g = best_first(g,Pawn::BLACK);
+        std::vector<int> v={pawn.getcorX(), pawn.getcorY(), moves[index][1], moves[index][2], moves[index][3]};
+        movesRecordBlack.push_back(v);
 
         cin>>s>>x1>>y1>>b>>x2>>y2;
         vector<int> move{g.getPawn(x1, y1), (int)(b=='B'), x2, y2};
